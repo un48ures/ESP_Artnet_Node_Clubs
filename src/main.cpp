@@ -6,8 +6,8 @@
 
 //Wifi settings - be sure to replace these with the WiFi network that your computer is connected to
 
-const char* ssid = "Artnet";
-const char* password = "ArtnetArtnet";
+const char* ssid = "HomeSweetHome_EXT";
+const char* password = "Ageofultron10!";
 
 // LED Strip
 const int numLeds = 29; // Change if your setup has more or less LED's
