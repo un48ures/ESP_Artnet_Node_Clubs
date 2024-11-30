@@ -6,8 +6,8 @@
 
 //Wifi settings - be sure to replace these with the WiFi network that your computer is connected to
 
-const char* ssid = "HomeSweetHome_EXT";
-const char* password = "Ageofultron10!";
+const char *ssid = "Artnet_Clubs";
+const char *password = "artnetartnet";
 
 // IPAddress local_IP(192, 186, 0, 33);
 // IPAddress gateway(192, 168, 0, 1);
@@ -22,9 +22,13 @@ CRGB leds[numLeds];
 // Artnet settings
 ArtnetWifi artnet;
 const int startUniverse = 0;
-
 bool sendFrame = 1;
 int previousDataLength = 0;
+
+bool connection_state = false;
+
+void scan_wifi();
+void print_connection_state();
 
 // connect to wifi – returns true if successful or false if not
 boolean ConnectWifi(void)
@@ -32,40 +36,57 @@ boolean ConnectWifi(void)
   boolean state = true;
   int i = 0;
 
-  // if (!WiFi.config(local_IP, gateway, subnet))
-  // {
-  //   Serial.println("STA failed to configure");
-  // }
-
+  WiFi.mode(WIFI_STA); // Ensure it's in station mode
   WiFi.begin(ssid, password);
-  Serial.println("");
-  Serial.println("Connecting to WiFi");
+  Serial.println("\nConnecting to WiFi...");
 
   // Wait for connection
-  Serial.print("Connecting");
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
-    if (i > 20){
+    Serial.print("WiFi Status: ");
+    Serial.println(WiFi.status());
+
+    // Debug WiFi status codes
+    switch (WiFi.status())
+    {
+    case WL_NO_SSID_AVAIL:
+      Serial.println("ERROR: SSID not available.");
+      break;
+    case WL_CONNECT_FAILED:
+      Serial.println("ERROR: Incorrect password.");
+      break;
+    case WL_DISCONNECTED:
+      Serial.println("ERROR: WiFi disconnected.");
+      break;
+    case WL_IDLE_STATUS:
+      Serial.println("WiFi is idle, waiting...");
+      break;
+    }
+
+    if (i > 40)
+    { // Increase timeout to 20 seconds
       state = false;
       break;
     }
     i++;
   }
-  if (state){
-    Serial.println("");
-    Serial.print("Connected to ");
-    Serial.println(ssid);
+
+  if (state)
+  {
+    Serial.println("\nConnected to WiFi!");
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("");
-    Serial.println("Connection failed.");
+  }
+  else
+  {
+    Serial.println("\nFailed to connect to WiFi.");
+    scan_wifi();
   }
 
   return state;
 }
-
 void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* data)
 {
   sendFrame = 1;
@@ -95,33 +116,79 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* d
 
 void setup()
 {
-  Serial.begin(115200);
-  ConnectWifi();
-  artnet.begin();
   FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, numLeds);
-  // Run up light
-  for(int i = 0; i < numLeds; i++)
+  // Switch on light - not connected = red:
+  leds[0] = CRGB(255, 0, 0);
+  FastLED.setBrightness(15);
+  FastLED.show();
+  Serial.begin(115200);
+  connection_state = ConnectWifi();
+  // Switch on light - connected = green:
+  if (connection_state)
   {
-    leds[i] = CRGB(255, 0, 0);
-    FastLED.setBrightness(15);
+    leds[0] = CRGB(0, 255, 0);
     FastLED.show();
-    delay(50);
   }
-  // All black
-  for(int i = 0; i < numLeds; i++)
+  else
   {
-    leds[i] = CRGB(0, 0, 0);
-    // FastLED.setBrightness(10);
+    leds[0] = CRGB(209, 134, 0);
     FastLED.show();
-    delay(50);
   }
 
+  artnet.begin();
+  FastLED.setBrightness(100);
   // onDmxFrame will execute every time a packet is received by the ESP32
   artnet.setArtDmxCallback(onDmxFrame);
 }
 
 void loop()
 {
-  // we call the read function inside the loop
   artnet.read();
+  print_connection_state();
+}
+
+void print_connection_state()
+{
+  static int time_stamp = millis();
+  if (millis() > (time_stamp + 5000))
+  {
+    Serial.print("Connection state: ");
+    if (connection_state)
+    {
+      Serial.print("TRUE");
+      Serial.print("IP address: ");
+      Serial.println(WiFi.localIP());
+    }
+    else
+    {
+      Serial.println("FALSE");
+    }
+    time_stamp = millis();
+  }
+}
+
+void scan_wifi()
+{
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
+
+  Serial.println("Scanning for WiFi networks...");
+  int numberOfNetworks = WiFi.scanNetworks(); // Start the scan
+  while (numberOfNetworks <= -1)
+  {
+    Serial.println("WiFi scan failed.");
+    delay(5000);
+  }
+  Serial.printf("Found %d networks:\n", numberOfNetworks);
+
+  // Loop through the networks and print their details
+  for (int i = 0; i < numberOfNetworks; i++)
+  {
+    Serial.printf("SSID: %s, Signal Strength: %d dBm, Encryption Type: %s\n",
+                  WiFi.SSID(i).c_str(), WiFi.RSSI(i),
+                  (WiFi.encryptionType(i) == AUTH_OPEN) ? "Open" : "Encrypted");
+  }
+
+  Serial.println();
 }
