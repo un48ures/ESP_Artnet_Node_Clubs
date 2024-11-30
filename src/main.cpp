@@ -9,6 +9,10 @@
 const char* ssid = "HomeSweetHome_EXT";
 const char* password = "Ageofultron10!";
 
+// IPAddress local_IP(192, 186, 0, 33);
+// IPAddress gateway(192, 168, 0, 1);
+// IPAddress subnet(255, 255, 255, 0);
+
 // LED Strip
 const int numLeds = 29; // Change if your setup has more or less LED's
 const int numberOfChannels = numLeds * 3; // Total number of DMX channels you want to receive (1 led = 3 channels)
@@ -27,6 +31,11 @@ boolean ConnectWifi(void)
 {
   boolean state = true;
   int i = 0;
+
+  // if (!WiFi.config(local_IP, gateway, subnet))
+  // {
+  //   Serial.println("STA failed to configure");
+  // }
 
   WiFi.begin(ssid, password);
   Serial.println("");
@@ -64,6 +73,7 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* d
   if (universe == 15)
   {
     FastLED.setBrightness(data[0]);
+    // FastLED.setBrightness(40);
   }
   // read universe and put into the right part of the display buffer
   int led = 0;
@@ -89,6 +99,22 @@ void setup()
   ConnectWifi();
   artnet.begin();
   FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, numLeds);
+  // Run up light
+  for(int i = 0; i < numLeds; i++)
+  {
+    leds[i] = CRGB(255, 0, 0);
+    FastLED.setBrightness(15);
+    FastLED.show();
+    delay(50);
+  }
+  // All black
+  for(int i = 0; i < numLeds; i++)
+  {
+    leds[i] = CRGB(0, 0, 0);
+    // FastLED.setBrightness(10);
+    FastLED.show();
+    delay(50);
+  }
 
   // onDmxFrame will execute every time a packet is received by the ESP32
   artnet.setArtDmxCallback(onDmxFrame);
