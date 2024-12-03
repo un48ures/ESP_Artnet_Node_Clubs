@@ -110,21 +110,21 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
 void setup()
 {
   FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, numLeds);
-  // Switch on light - not connected = red:
-  leds[0] = CRGB(255, 0, 0);
+  // Switch on light - not connected/default = orange:
+  leds[0] = CRGB(209, 134, 0); // Orange
   FastLED.setBrightness(15);
   FastLED.show();
   Serial.begin(115200);
   connection_state = ConnectWifi();
-  // Switch on light - connected = green:
+  // Switch on light
   if (connection_state)
   {
-    leds[0] = CRGB(0, 255, 0);
+    leds[0] = CRGB(0, 255, 0); // Green
     FastLED.show();
   }
   else
   {
-    leds[0] = CRGB(209, 134, 0);
+    leds[0] = CRGB(255, 0, 0); // Red
     FastLED.show();
   }
 
@@ -142,7 +142,7 @@ void print_connection_state()
     Serial.print("Connection state: ");
     if (connection_state)
     {
-      Serial.print("TRUE");
+      Serial.print("TRUE - ");
       Serial.print("IP address: ");
       Serial.println(WiFi.localIP());
     }
