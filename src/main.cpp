@@ -16,7 +16,7 @@ const int numberOfChannels = numLeds * 3; // Total number of DMX channels you wa
 #define ANALOG_PIN A1   
 #define NUM_SAMPLES 10                    // Number of readings to average                  
 #define DEFAULT_BRIGHTNESS 150            // Brightness for init, battery status, wifi status LED
-// #define VOLTAGE
+#define VOLTAGE
 CRGB leds[numLeds];
 
 // Artnet settings
@@ -97,9 +97,28 @@ void setup()
   artnet.setArtDmxCallback(on_dmx_frame);
 }
 
+void print_voltage()
+{
+  static int time_stamp = millis();
+  if (millis() > (time_stamp + 5000))
+  {
+    float voltage = read_calibrated_voltage() * 2; // Multiply by 2 for voltage divider
+    Serial.print("Voltage: ");
+    Serial.print(voltage, 3);
+    Serial.println(" V");
+    // Percentage calculation
+    float percentage = (voltage - 3.0) / 1.2;
+    Serial.print("Percentage: ");
+    Serial.print(percentage*100, 3);
+    Serial.println(" %");
+    time_stamp = millis();
+  }
+}
+
 void loop()
 {
   artnet.read();
+  print_voltage();
   print_connection_state();
 }
 
