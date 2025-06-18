@@ -25,6 +25,7 @@ const int startUniverse = 0;
 bool sendFrame = 1;
 int previousDataLength = 0;
 bool connection_state = false;
+float voltage_startup = 0.0; // Variable to store the voltage at startup
 
 // Function prototypes
 void scan_wifi(void);
@@ -41,15 +42,15 @@ void setup()
   // Initialize ADC Calibration
   #ifdef VOLTAGE
   esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
-  float voltage = read_calibrated_voltage() * 2;  
+  voltage_startup = read_calibrated_voltage() * 2;  
   Serial.print("Calibrated Voltage: ");
-  Serial.print(voltage, 3);
+  Serial.print(voltage_startup, 3);
   Serial.println(" V");
-  if(voltage < 3.0)
+  if(voltage_startup < 3.0)
   {
-    voltage = 3.0;
+    voltage_startup = 3.0;
   }
-  float percentage = (voltage - 3.0) / 1.2;
+  float percentage = (voltage_startup - 3.0) / 1.2;
   Serial.print("Percentage: ");
   Serial.print(percentage, 3);
   Serial.println(" %");
@@ -103,8 +104,12 @@ void print_voltage()
   if (millis() > (time_stamp + 5000))
   {
     float voltage = read_calibrated_voltage() * 2; // Multiply by 2 for voltage divider
-    Serial.print("Voltage: ");
+    Serial.print("Current Voltage: ");
     Serial.print(voltage, 3);
+    Serial.println(" V");
+    // Print startup voltage
+    Serial.print("Startup Voltage: ");
+    Serial.print(voltage_startup, 3);
     Serial.println(" V");
     // Percentage calculation
     float percentage = (voltage - 3.0) / 1.2;
